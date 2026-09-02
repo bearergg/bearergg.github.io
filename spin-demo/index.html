@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Choose your case</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0 20px;
+      background: #fff;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #fff;
+    }
+
+    .panel {
+      max-width: 1180px;
+      margin: 20px auto;
+      padding-bottom: 24px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: radial-gradient(60% 70% at 50% 100%, #1f36ff 0%, rgba(31, 54, 255, .35) 40%, transparent 75%), linear-gradient(#0b1230, #050a1f);
+    }
+
+    .panel.busy {
+      pointer-events: none;
+    }
+
+    header {
+      padding: 36px 40px 8px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+    }
+
+    header p {
+      margin: 0 0 14px;
+      font-size: 15px;
+      color: #b9bfe6;
+    }
+
+    .stage {
+      position: relative;
+    }
+
+    .viewport {
+      position: relative;
+      height: min(300px, 32vw);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: grab;
+    }
+
+    .viewport:active {
+      cursor: grabbing;
+    }
+
+    .case {
+      position: absolute;
+      width: calc(22% / 1.2);
+      aspect-ratio: 4 / 3;
+      display: grid;
+      place-items: center;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    .case video {
+      position: relative;
+      width: 85%;
+      aspect-ratio: 1;
+    }
+
+    .case::before {
+      content: '';
+      position: absolute;
+      inset: 5% 3% 2%;
+      border-radius: 24px;
+      background: rgba(48, 74, 160, .40);
+      opacity: 0;
+      transition: opacity .25s;
+    }
+
+    .case.selected::before {
+      opacity: 1;
+    }
+
+    .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, .25);
+      background: rgba(0, 0, 0, .55);
+      color: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .arrow svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .arrow.left {
+      left: 24px;
+    }
+
+    .arrow.right {
+      right: 24px;
+    }
+
+    .random {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding-top: 18px;
+      font-size: 14px;
+      color: #b9bfe6;
+    }
+
+    .random button {
+      padding: 4px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: none;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .random button:hover {
+      background: rgba(255, 255, 255, .12);
+    }
+
+    .random i {
+      color: rgba(255, 255, 255, .25);
+      font-style: normal;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      padding-top: 14px;
+    }
+
+    .open {
+      padding: 14px 44px;
+      border: 0;
+      border-radius: 999px;
+      background: #2f4bff;
+      color: #fff;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(47, 75, 255, .45);
+      transition: opacity .2s, filter .2s;
+    }
+
+    .open:hover:not(:disabled) {
+      filter: brightness(1.12);
+    }
+
+    .open:disabled {
+      opacity: .4;
+      cursor: default;
+      box-shadow: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="panel">
+    <header>
+      <h1>Choose your case</h1>
+    </header>
+    <div class="stage">
+      <div class="viewport"></div>
+      <button class="arrow left" aria-label="Previous case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 5l-7 7 7 7" />
+        </svg></button>
+      <button class="arrow right" aria-label="Next case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5l7 7-7 7" />
+        </svg></button>
+    </div>
+    <div class="random">Select random cases:
+      <button data-n="1" data-near="1">1</button><i>|</i>
+      <button data-n="2" data-near="2">2</button><i>|</i>
+      <button data-n="5" data-near="3">5</button><i>|</i>
+      <button data-n="10" data-near="5">10</button><i>|</i>
+      <button data-n="50" data-near="5">50</button>
+    </div>
+    <div class="actions"><button class="open" type="button">Open</button></div>
+  </main>
+  <script>
+    const TOTAL = 50;
+    const panel = document.querySelector('.panel');
+    const viewport = document.querySelector('.viewport');
+    const selected = new Set();
+    const cases = Array.from({ length: 6 }, () => {
+      const el = viewport.appendChild(Object.assign(document.createElement('div'), { className: 'case' }));
+      el.video = el.appendChild(Object.assign(document.createElement('video'), {
+        poster: 'assets/case-poster.png', muted: true, playsInline: true, preload: 'auto',
+        innerHTML: `<source src="assets/case.mov" type='video/quicktime; codecs="hvc1"'><source src="assets/case.webm" type="video/webm">`
+      }));
+      el.frame = 'start';
+      return el;
+    });
+    const keys = Array.from({ length: TOTAL }, (_, i) => i);
+    let nextKey = TOTAL;
+    const wrap = k => (k % keys.length + keys.length) % keys.length;
+    const opened = new Set();
+    const openButton = document.querySelector('.open');
+    const click = new Audio('assets/click.wav');
+    const win = new Audio('assets/win.mp3');
+
+    let slot = 0, pos = 0, target = 0, held = false, raf = 0, lastFrame = 0, tickedAt = 0, silent = false;
+
+    function render() {
+      const base = Math.floor(pos) - 2;
+      cases.forEach((el, i) => {
+        const d = base + i - pos;
+        const k = keys[wrap(base + i)];
+        el.style.transform = `translate3d(${d * slot}px,0,0)`;
+        el.classList.toggle('selected', selected.has(k));
+        el.key = k;
+        const frame = opened.has(k) ? 'end' : 'start';
+        if (el.frame !== frame && el.video.readyState) {
+          el.frame = frame;
+          el.video.pause();
+          el.video.currentTime = frame === 'end' ? el.video.duration : 0;
+        }
+      });
+      const nearest = Math.round(pos);
+      if (nearest !== tickedAt) {
+        tickedAt = nearest;
+        if (!silent) click.cloneNode().play().catch(() => { });
+      }
+      const fresh = [...selected].filter(k => !opened.has(k)).length;
+      const label = fresh ? `Open ${fresh} case${fresh > 1 ? 's' : ''}` : 'Open';
+      if (openButton.textContent !== label) openButton.textContent = label;
+      openButton.disabled = !fresh;
+    }
+
+    function tick(now) {
+      const dt = Math.min(now - lastFrame, 64);
+      lastFrame = now;
+      if (held) silent = false;
+      else {
+        pos += (target - pos) * (1 - Math.exp(-dt / 90));
+        if (Math.abs(target - pos) < .003) pos = target;
+      }
+      render();
+      if (held || pos !== target) return raf = requestAnimationFrame(tick);
+      silent = false;
+      raf = 0;
+    }
+
+    function wake() {
+      if (raf) return;
+      lastFrame = performance.now();
+      raf = requestAnimationFrame(tick);
+    }
+
+    let wheelTimer, wheelFrom;
+    function go(t) {
+      clearTimeout(wheelTimer);
+      wheelTimer = 0;
+      held = false;
+      target = t;
+      wake();
+    }
+
+    function settle(direction) {
+      go(direction > 0 ? Math.ceil(pos) : direction < 0 ? Math.floor(pos) : Math.round(pos));
+    }
+
+    let dragId = null, dragX, dragPos, lastX, velocity, moveAt;
+    function step(n) {
+      if (dragId === null) go(Math.round(held ? pos : target) + n);
+    }
+
+    openButton.onclick = () => {
+      const fresh = [...selected].filter(k => !opened.has(k));
+      fresh.forEach(k => opened.add(k));
+      panel.classList.add('busy');
+      win.currentTime = 0;
+      win.play().catch(() => win.onended());
+      cases.forEach(el => {
+        if (!fresh.includes(el.key)) return;
+        el.frame = 'end';
+        el.video.currentTime = 0;
+        el.video.play().catch(() => { });
+      });
+      render();
+    };
+
+    win.onended = () => {
+      opened.forEach(k => {
+        keys[keys.indexOf(k)] = nextKey++;
+        selected.delete(k);
+      });
+      opened.clear();
+      panel.classList.remove('busy');
+      render();
+    };
+
+    document.querySelector('.random').onclick = e => {
+      const n = +e.target.dataset.n;
+      if (!n) return;
+      const centre = Math.round(held ? pos : target);
+      const near = [0, 1, -1, 2, -2].slice(0, +e.target.dataset.near)
+        .map(d => keys[wrap(centre + d)])
+        .filter(k => !opened.has(k));
+      const rest = keys
+        .filter(k => !opened.has(k) && !near.includes(k))
+        .map(k => [Math.random(), k])
+        .sort((a, b) => a[0] - b[0])
+        .slice(0, n - near.length)
+        .map(([, k]) => k);
+      selected.clear();
+      [...near, ...rest].forEach(k => selected.add(k));
+      render();
+    };
+
+    document.querySelector('.left').onclick = () => step(-1);
+    document.querySelector('.right').onclick = () => step(1);
+    addEventListener('keydown', e => {
+      if (e.repeat || panel.classList.contains('busy')) return;
+      if (e.key === 'ArrowLeft') step(-1);
+      if (e.key === 'ArrowRight') step(1);
+    });
+
+    viewport.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || dragId !== null) return;
+      e.preventDefault();
+      if (!wheelTimer) wheelFrom = Math.round(pos);
+      clearTimeout(wheelTimer);
+      held = true;
+      pos += e.deltaX / slot;
+      wake();
+      wheelTimer = setTimeout(() => {
+        wheelTimer = 0;
+        const moved = pos - wheelFrom;
+        go(Math.abs(moved) > .1 && Math.abs(moved) < 1 ? wheelFrom + Math.sign(moved) : Math.round(pos));
+      }, 100);
+    }, { passive: false });
+
+    viewport.addEventListener('pointerdown', e => {
+      if (e.button) return;
+      viewport.setPointerCapture(e.pointerId);
+      clearTimeout(wheelTimer);
+      dragId = e.pointerId;
+      held = true;
+      dragX = lastX = e.clientX;
+      dragPos = pos;
+      velocity = 0;
+      moveAt = e.timeStamp;
+      wake();
+    });
+    viewport.addEventListener('pointermove', e => {
+      if (e.pointerId !== dragId) return;
+      velocity = (lastX - e.clientX) / Math.max(e.timeStamp - moveAt, 1);
+      lastX = e.clientX;
+      moveAt = e.timeStamp;
+      pos = dragPos + (dragX - e.clientX) / slot;
+    });
+    viewport.addEventListener('pointerup', e => {
+      if (e.pointerId !== dragId) return;
+      dragId = null;
+      if (Math.abs(e.clientX - dragX) < 5) {
+        const r = viewport.getBoundingClientRect();
+        const pick = Math.round(pos + (e.clientX - r.left - r.width / 2) / slot);
+        const k = keys[wrap(pick)];
+        selected.has(k) ? selected.delete(k) : selected.add(k);
+        click.cloneNode().play().catch(() => { });
+        silent = true;
+        return go(pick);
+      }
+      settle(e.timeStamp - moveAt < 80 && Math.abs(velocity) > .25 ? velocity : 0);
+    });
+    viewport.addEventListener('pointercancel', e => {
+      if (e.pointerId !== dragId) return;
+      dragId = null;
+      settle(0);
+    });
+
+    new ResizeObserver(() => { slot = viewport.clientWidth / 5; render(); }).observe(viewport);
+  </script>
+</body>
+
+</html>
