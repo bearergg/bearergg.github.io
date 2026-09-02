@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weapon Cache</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --case-w: 23%;
+    --case-lift: 18.65%;
+    --tan: #d8c9a3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 24px;
+    background: #0b0b0c;
+    color: var(--tan);
+    font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  }
+  .shelf {
+    position: relative;
+    width: min(90vw, 78vh, 900px);
+    aspect-ratio: 1;
+    user-select: none;
+  }
+  .shelf > img.bg { width: 100%; display: block; }
+  .case {
+    position: absolute;
+    width: var(--case-w);
+    aspect-ratio: 1;
+    left: var(--x);
+    top: calc(var(--y) - var(--case-lift));
+    transform: translateX(-50%);
+    background: url('assets/case.png') center/contain no-repeat;
+    
+    pointer-events: none;
+  }
+  .more {
+    position: absolute;
+    left: 70.2%;
+    right: 8.3%;
+    top: 70.6%;
+    bottom: 10.7%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-family: 'Black Ops One', 'Arial Narrow', sans-serif;
+    text-shadow: 0 2px 12px #000;
+    pointer-events: none;
+  }
+  .more b {
+    font-size: 7.4cqw;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .more span {
+    margin-top: 0.5em;
+    font-size: 1.55cqw;
+    letter-spacing: 0.18em;
+  }
+  .shelf { container-type: size; }
+  .controls {
+    width: min(90vw, 900px);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .controls input {
+    flex: 1;
+    accent-color: #d8c9a3;
+  }
+  .controls output {
+    min-width: 3ch;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: right;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+  <div class="shelf" id="shelf">
+    <img class="bg" src="assets/shelf.png" alt="">
+  </div>
+
+  <div class="controls">
+    <input id="count" type="range" min="0" max="50" value="15">
+    <output id="out">15</output>
+  </div>
+
+<script>
+  const COLS = [19.2, 40.1, 61.2, 82.5];
+  const ROWS = [28.8, 47.5, 67.0, 87.7];
+  const SLOTS = ROWS.flatMap((y, r) => COLS.slice(0, r === 3 ? 3 : 4).map(x => ({ x, y })));
+
+  const shelf = document.getElementById('shelf');
+  const input = document.getElementById('count');
+  const out = document.getElementById('out');
+
+  function render(n) {
+    shelf.querySelectorAll('.case, .more').forEach(el => el.remove());
+    const shown = Math.min(n, SLOTS.length);
+    for (let i = 0; i < shown; i++) {
+      const el = document.createElement('div');
+      el.className = 'case';
+      el.style.setProperty('--x', SLOTS[i].x + '%');
+      el.style.setProperty('--y', SLOTS[i].y + '%');
+      shelf.append(el);
+    }
+    if (n > SLOTS.length) {
+      const el = document.createElement('div');
+      el.className = 'more';
+      el.innerHTML = `<b>+${n - SLOTS.length}</b><span>OTHER CASES</span>`;
+      shelf.append(el);
+    }
+    out.value = n;
+  }
+
+  input.addEventListener('input', () => render(+input.value));
+  render(+input.value);
+</script>
+</body>
+</html>
