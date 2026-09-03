@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Choose your case</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0 20px;
+      background: #fff;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #fff;
+    }
+
+    .panel {
+      max-width: 1180px;
+      margin: 20px auto;
+      padding-bottom: 24px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: radial-gradient(60% 70% at 50% 100%, #1f36ff 0%, rgba(31, 54, 255, .35) 40%, transparent 75%), linear-gradient(#0b1230, #050a1f);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 36px 40px 8px;
+    }
+
+    .balance {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .06);
+      font-size: 15px;
+      color: #b9bfe6;
+      white-space: nowrap;
+    }
+
+    .balance b {
+      display: inline-block;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .balance b.tick {
+      animation: tick .35s ease-out;
+    }
+
+    .balance.empty {
+      animation: shake .4s;
+      border-color: rgba(255, 90, 90, .6);
+    }
+
+    @keyframes tick {
+      30% { transform: scale(1.18); color: var(--tick); }
+    }
+
+    .cashout {
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 999px;
+      background: #2f4bff;
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(47, 75, 255, .45);
+      transition: opacity .2s, filter .2s;
+    }
+
+    .cashout:hover:not(:disabled) {
+      filter: brightness(1.12);
+    }
+
+    .cashout:disabled {
+      opacity: .4;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    @keyframes shake {
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+    }
+
+    header p {
+      margin: 0 0 14px;
+      font-size: 15px;
+      color: #b9bfe6;
+    }
+
+    .stage {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 24px 40px;
+      padding: 8px 40px 0;
+    }
+
+    .recent {
+      width: 300px;
+      padding-top: 8px;
+    }
+
+    .recent h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #b9bfe6;
+    }
+
+    .recent ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recent ul:empty::after {
+      content: 'Nothing opened yet';
+      font-size: 14px;
+      color: rgba(255, 255, 255, .35);
+    }
+
+    .recent li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .06);
+      animation: slide .3s ease-out;
+    }
+
+    .recent img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+
+    .recent .name {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .recent .count {
+      margin-left: -4px;
+      font-size: 13px;
+      color: #b9bfe6;
+    }
+
+    .recent .value {
+      font-size: 12px;
+      font-weight: 700;
+      color: #7ee787;
+      white-space: nowrap;
+    }
+
+    .confetti {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      perspective: 400px;
+    }
+
+    .confetti i {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 8px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--c);
+      will-change: transform, opacity;
+    }
+
+    .case.opening.boom {
+      animation: boom .6s cubic-bezier(.2, 1.6, .4, 1);
+    }
+
+    @keyframes boom {
+      20% { transform: scale(.85); }
+      50% { transform: scale(1.3); }
+    }
+
+    @keyframes slide {
+      from { opacity: 0; transform: translateY(-8px); }
+    }
+
+    .left {
+      width: min(560px, 100%);
+    }
+
+    .grid {
+      display: flex;
+      flex-direction: column;
+      width: min(560px, 100%);
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .row {
+      padding-bottom: 8px;
+    }
+
+    .cases {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      transition: transform .45s, opacity .45s;
+    }
+
+    .row.collapsed .cases {
+      transform: scaleY(0);
+      opacity: 0;
+    }
+
+    .case {
+      --d: 0ms;
+      position: relative;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .case::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: rgba(48, 74, 160, .40);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .case:not(.opening):hover::before {
+      opacity: .45;
+    }
+
+    .case.opening {
+      cursor: default;
+    }
+
+    .case video {
+      position: relative;
+      width: 88%;
+      aspect-ratio: 1;
+      pointer-events: none;
+    }
+
+    .case.opening {
+      animation: pop .7s var(--d) cubic-bezier(.3, 1.5, .5, 1) both;
+      z-index: 1;
+    }
+
+    .case.opening::before {
+      opacity: 1;
+      animation: flash .7s var(--d) ease-out both;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1) rotate(0); }
+      15% { transform: scale(.9) rotate(-4deg); }
+      30% { transform: scale(.92) rotate(4deg); }
+      45% { transform: scale(.9) rotate(-3deg); }
+      65% { transform: scale(1.16) rotate(0); }
+      100% { transform: scale(1) rotate(0); }
+    }
+
+    @keyframes flash {
+      0% { box-shadow: 0 0 0 0 rgba(120, 160, 255, .8); background: rgba(48, 74, 160, .4); }
+      60% { box-shadow: 0 0 34px 10px rgba(120, 160, 255, .55); background: rgba(120, 160, 255, .55); }
+      100% { box-shadow: 0 0 0 0 rgba(120, 160, 255, 0); background: rgba(48, 74, 160, .4); }
+    }
+
+    .random {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding-top: 18px;
+      font-size: 14px;
+      color: #b9bfe6;
+    }
+
+    .random button {
+      padding: 4px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: none;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .random button:hover {
+      background: rgba(255, 255, 255, .12);
+    }
+
+    .random i {
+      color: rgba(255, 255, 255, .25);
+      font-style: normal;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      padding-top: 14px;
+    }
+
+    .open {
+      padding: 14px 44px;
+      border: 0;
+      border-radius: 999px;
+      background: #2f4bff;
+      color: #fff;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(47, 75, 255, .45);
+      transition: opacity .2s, filter .2s;
+    }
+
+    .open:hover:not(:disabled) {
+      filter: brightness(1.12);
+    }
+
+    .open:disabled {
+      opacity: .4;
+      cursor: default;
+      box-shadow: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="panel">
+    <header>
+      <h1>Choose your case</h1>
+      <div class="balance">Balance <b>50</b> USDC</div>
+    </header>
+    <div class="stage">
+      <div class="left">
+        <div class="grid"></div>
+        <div class="random">Open random cases:
+          <button data-n="1">1</button><i>|</i>
+          <button data-n="3">3</button><i>|</i>
+          <button data-n="5">5</button><i>|</i>
+          <button data-n="10">10</button><i>|</i>
+          <button data-n="25">25</button>
+        </div>
+      </div>
+      <aside class="recent">
+        <h2>Last opened cases</h2>
+        <ul></ul>
+        <button class="cashout" type="button" disabled>Instant cashout · 0.00 USDC</button>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const COLS = 5, ROWS = 5, COLLAPSE_MS = 450, PRICE = 2.5;
+    const balanceBox = document.querySelector('.balance');
+    const balanceValue = balanceBox.querySelector('b');
+    let balance = 50;
+
+    function setBalance(value, color) {
+      balance = Number(value.toFixed(2));
+      balanceValue.textContent = balance;
+      balanceValue.style.setProperty('--tick', color);
+      balanceValue.classList.remove('tick');
+      balanceValue.offsetWidth;
+      balanceValue.classList.add('tick');
+    }
+
+    function charge(count) {
+      const affordable = Math.min(count, Math.floor(balance / PRICE));
+      if (!affordable) {
+        balanceBox.classList.remove('empty');
+        balanceBox.offsetWidth;
+        balanceBox.classList.add('empty');
+        return 0;
+      }
+      setBalance(balance - affordable * PRICE, '#ff8a80');
+      return affordable;
+    }
+    const grid = document.querySelector('.grid');
+    const collect = new Audio('assets/collect-base.mp3');
+    const collectVip = new Audio('assets/collect-vip.mp3');
+    const cashout = new Audio('assets/cashout.mp3');
+    const CLIP_EXT = document.createElement('video').canPlayType('video/quicktime; codecs="hvc1"') ? 'mov' : 'webm';
+    const CASES = [
+      { name: 'Kilowatt Case', value: .2, weight: 35 },
+      { name: 'Dreams & Nightmares Case', value: 1.5, weight: 50 },
+      { name: 'Operation Bravo Case', value: 84, weight: 5, vip: true, boom: true },
+      { name: 'Operation Hydra Case', value: 45, weight: 10, vip: true },
+    ].map((c, i) => ({ ...c, src: `assets/open-${i + 1}.${CLIP_EXT}`, img: `assets/case-${i + 1}.png` }));
+    CASES.forEach(c => fetch(c.src));
+    const TOTAL_WEIGHT = CASES.reduce((sum, c) => sum + c.weight, 0);
+    function randomCase() {
+      let roll = Math.random() * TOTAL_WEIGHT;
+      return CASES.find(c => (roll -= c.weight) < 0) || CASES[CASES.length - 1];
+    }
+    const recent = document.querySelector('.recent ul');
+    const cashoutButton = document.querySelector('.cashout');
+    const CASHOUT_RATE = .9;
+    let total = 0;
+
+    function renderStats() {
+      cashoutButton.textContent = `Instant cashout · ${(total * CASHOUT_RATE).toFixed(2)} USDC`;
+      cashoutButton.disabled = !total;
+    }
+
+    const rows = new Map();
+
+    function logOpened(c) {
+      if (!rows.has(c)) rows.set(c, {
+        count: 0,
+        li: recent.appendChild(Object.assign(document.createElement('li'), {
+          innerHTML: `<img src="${c.img}" alt=""><span class="name">${c.name}</span><span class="count"></span><span class="value"></span>`
+        }))
+      });
+      const row = rows.get(c);
+      row.count++;
+      row.li.querySelector('.count').textContent = `×${row.count}`;
+      row.li.querySelector('.value').textContent = `${(row.count * c.value).toFixed(2)} USDC`;
+      [...rows]
+        .sort((a, b) => b[1].count * b[0].value - a[1].count * a[0].value)
+        .forEach(([, r], i) => r.li.style.order = i);
+      total += c.value;
+      renderStats();
+    }
+
+    const rand = (min, max) => min + Math.random() * (max - min);
+    const CONFETTI_COLORS = ['#ff5e5e', '#ffd166', '#7ee787', '#5ec8ff', '#c48bff', '#ff8fd6', '#ffffff'];
+
+    function confetti(el) {
+      const box = el.appendChild(Object.assign(document.createElement('div'), { className: 'confetti' }));
+      const size = el.clientWidth;
+      for (let i = 0; i < 70; i++) {
+        const piece = box.appendChild(document.createElement('i'));
+        piece.style.setProperty('--c', CONFETTI_COLORS[i % CONFETTI_COLORS.length]);
+        piece.style.width = rand(5, 9) + 'px';
+        piece.style.height = rand(8, 14) + 'px';
+        const angle = rand(-Math.PI * .85, -Math.PI * .15);
+        const speed = rand(1.6, 3.6) * size;
+        const vx = Math.cos(angle) * speed, vy = Math.sin(angle) * speed;
+        const gravity = 4.5 * size, drift = rand(-.4, .4) * size;
+        const rx = rand(0, 360), ry = rand(0, 360), rz = rand(0, 360);
+        const spin = rand(360, 1080), duration = rand(1200, 1900);
+        const at = t => {
+          const x = vx * t + drift * t * t, y = vy * t + .5 * gravity * t * t;
+          return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotateX(${rx + spin * t}deg) rotateY(${ry + spin * .7 * t}deg) rotateZ(${rz + spin * .4 * t}deg)`;
+        };
+        piece.animate(
+          [0, .25, .5, .75, 1].map(t => ({ transform: at(t), opacity: t < .7 ? 1 : 1 - (t - .7) / .3, offset: t })),
+          { duration, easing: 'linear', fill: 'forwards' }
+        );
+      }
+      el.classList.remove('boom');
+      el.offsetWidth;
+      el.classList.add('boom');
+      setTimeout(() => box.remove(), 2000);
+    }
+
+    function closeCase(el) {
+      el.classList.remove('opening', 'done', 'boom');
+      el.style.removeProperty('--d');
+      el.video.removeAttribute('src');
+      el.video.load();
+    }
+
+    cashoutButton.onclick = () => {
+      setBalance(balance + total * CASHOUT_RATE, '#7ee787');
+      grid.querySelectorAll('.case.opening').forEach(closeCase);
+      recent.replaceChildren();
+      rows.clear();
+      total = 0;
+      renderStats();
+      play(cashout);
+    };
+    function makeRow(collapsed) {
+      const row = Object.assign(document.createElement('div'), { className: collapsed ? 'row collapsed' : 'row' });
+      const cells = row.appendChild(Object.assign(document.createElement('div'), { className: 'cases' }));
+      for (let i = 0; i < COLS; i++) {
+        const el = cells.appendChild(Object.assign(document.createElement('div'), { className: 'case' }));
+        el.video = el.appendChild(Object.assign(document.createElement('video'), {
+          poster: 'assets/case-poster.png', muted: true, playsInline: true
+        }));
+        el.video.onended = () => {
+          el.classList.add('done');
+          rowDone(row);
+        };
+      }
+      return row;
+    }
+
+    for (let i = 0; i < ROWS; i++) grid.appendChild(makeRow(false));
+
+    const closedCases = () => [...grid.querySelectorAll('.case:not(.opening)')];
+
+    function rowDone(row) {
+      if (row.querySelectorAll('.case.done').length < COLS) return;
+      setTimeout(() => row.classList.add('collapsed'), 500);
+      setTimeout(() => {
+        const fresh = makeRow(true);
+        row.replaceWith(fresh);
+        fresh.offsetHeight;
+        fresh.classList.remove('collapsed');
+      }, 500 + COLLAPSE_MS);
+    }
+
+    function play(audio) {
+      audio.cloneNode().play().catch(() => { });
+    }
+
+    grid.onclick = e => {
+      const el = e.target.closest('.case:not(.opening)');
+      if (!el) return;
+      openCases([el]);
+    };
+
+    document.querySelector('.random').onclick = e => {
+      const n = +e.target.dataset.n;
+      if (!n) return;
+      openCases(closedCases()
+        .map(el => [Math.random(), el])
+        .sort((a, b) => a[0] - b[0])
+        .slice(0, n)
+        .map(([, el]) => el));
+    };
+
+    function openCases(opening) {
+      opening = opening.slice(0, charge(opening.length));
+      if (!opening.length) return;
+      const picks = opening.map(randomCase);
+      picks.forEach(logOpened);
+      const played = new Set();
+      const cue = c => {
+        const sound = c.vip ? collectVip : collect;
+        if (played.has(sound)) return;
+        played.add(sound);
+        play(sound);
+      };
+      cue(picks[0]);
+      opening.forEach((el, i) => {
+        el.style.setProperty('--d', i * 60 + 'ms');
+        el.classList.add('opening');
+        setTimeout(() => {
+          if (!el.classList.contains('opening')) return;
+          cue(picks[i]);
+          el.opened = picks[i];
+          if (el.opened.boom) confetti(el);
+          el.video.src = el.opened.src;
+          el.video.play().catch(() => { });
+        }, i * 60 + 300);
+      });
+    }
+  </script>
+</body>
+
+</html>
