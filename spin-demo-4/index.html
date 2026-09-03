@@ -424,7 +424,12 @@
       { name: 'Operation Bravo Case', value: 84, weight: 5, vip: true, boom: true },
       { name: 'Operation Hydra Case', value: 45, weight: 10, vip: true },
     ].map((c, i) => ({ ...c, src: `assets/open-${i + 1}.${CLIP_EXT}`, img: `assets/case-${i + 1}.png` }));
-    CASES.forEach(c => fetch(c.src));
+    const warmVideos = CASES.map(c => Object.assign(document.createElement('video'), { src: c.src, preload: 'auto', muted: true }));
+    const warmImages = CASES.map(c => Object.assign(new Image(), { src: c.img }));
+    [collect, collectVip, cashout].forEach(audio => {
+      audio.preload = 'auto';
+      audio.load();
+    });
     const TOTAL_WEIGHT = CASES.reduce((sum, c) => sum + c.weight, 0);
     function randomCase() {
       let roll = Math.random() * TOTAL_WEIGHT;
